@@ -90,7 +90,7 @@ body {
   letter-spacing: -0.045em;
   line-height: 1;
   color: var(--ink);
-  margin-left: 1px;
+  margin-left: -0.05em;
 }
 
 .nav-actions { display: flex; gap: 0.25rem; }

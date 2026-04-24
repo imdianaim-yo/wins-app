@@ -1,6 +1,6 @@
 {
-  "name": "Wins",
-  "short_name": "Wins",
+  "name": "Daily Wins",
+  "short_name": "Daily Wins",
   "description": "Capture your daily wins before the day slips away.",
   "start_url": "/",
   "display": "standalone",
