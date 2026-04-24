@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wins</title>
+  <meta name="description" content="Capture your daily wins before the day slips away." />
+  <meta name="theme-color" content="#f5f3f0" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Set theme before paint to avoid flash
+    (function() {
+      const saved = localStorage.getItem('wins_theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+</head>
+<body>
+  <div id="app">
+    <nav class="nav">
+      <a class="nav-brand" href="/" aria-label="Wins — home">
+        <span class="brand-word">wins</span><span class="brand-bang">!</span>
+      </a>
+      <div class="nav-actions">
+        <button class="nav-btn" id="btn-theme" title="Toggle dark mode">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-timeline" title="View past wins">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-export" title="Export your wins">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="nav-btn" id="btn-calendar" title="Add 4:45pm reminder">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <main id="view-today" class="view">
+      <div class="welcome">
+        <p class="welcome-greeting" id="greeting"></p>
+        <h1 class="welcome-date" id="today-date"></h1>
+        <p class="welcome-prompt" id="daily-prompt"></p>
+      </div>
+
+      <div class="entry-card" id="entry-card">
+        <!-- State: empty -->
+        <div id="state-empty" class="entry-state">
+          <div class="input-row">
+            <button class="btn-mic" id="btn-record" title="Tap to talk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <p class="mic-hint" id="mic-hint">Tap to talk</p>
+          </div>
+          <p class="transcript-live" id="transcript-live"></p>
+          <textarea
+            id="text-input"
+            class="brain-dump"
+            placeholder="or type it out"
+            rows="1"
+          ></textarea>
+          <div class="actions-row hidden" id="actions-row">
+            <button class="btn-primary" id="btn-parse">Extract wins</button>
+          </div>
+        </div>
+
+        <!-- State: parsing -->
+        <div id="state-parsing" class="entry-state hidden">
+          <div class="parsing-state">
+            <div class="spinner-small"></div>
+            <span>Extracting your wins…</span>
+          </div>
+        </div>
+
+        <!-- State: review -->
+        <div id="state-review" class="entry-state hidden">
+          <div class="parsed-section">
+            <h3 class="section-label">Accomplishments</h3>
+            <ul id="list-accomplishments" class="parsed-list"></ul>
+          </div>
+          <div class="parsed-section">
+            <h3 class="section-label">Learnings</h3>
+            <ul id="list-learnings" class="parsed-list"></ul>
+          </div>
+          <div class="review-actions">
+            <button class="btn-secondary" id="btn-edit">Edit</button>
+            <button class="btn-primary" id="btn-save">Save</button>
+          </div>
+        </div>
+
+        <!-- State: saved -->
+        <div id="state-saved" class="entry-state hidden">
+          <div class="saved-message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Saved. Good work today.</span>
+          </div>
+          <div class="saved-summary">
+            <span id="saved-accomplishments-count" class="count-chip"></span>
+            <span id="saved-learnings-count" class="count-chip"></span>
+          </div>
+          <div class="review-actions">
+            <button class="btn-secondary" id="btn-new-entry">Add more</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="api-key-banner" class="api-key-banner hidden">
+        <p>Add your Claude API key to enable AI parsing.</p>
+        <div class="api-key-row">
+          <input type="password" id="api-key-input" placeholder="sk-ant-..." class="api-key-field" />
+          <button class="btn-primary btn-small" id="btn-save-key">Save</button>
+        </div>
+        <p class="api-key-note">Stored only in your browser. Sent only to Anthropic's API.</p>
+        <details class="api-key-help">
+          <summary>How do I get one?</summary>
+          <ol class="api-key-steps">
+            <li>Go to <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a> and sign in (or create an account).</li>
+            <li>In the left sidebar, click <strong>API Keys</strong>.</li>
+            <li>Click <strong>Create Key</strong>, give it a name like "Wins app," and hit Create.</li>
+            <li>Copy the key that starts with <code>sk-ant-</code> — you'll only see it once.</li>
+            <li>Paste it into the field above and click Save.</li>
+          </ol>
+          <p class="api-key-note">Heads up: Anthropic requires a small prepaid balance ($5 minimum) to use the API. Each brain dump costs roughly $0.001 — $5 covers thousands of entries.</p>
+        </details>
+      </div>
+    </main>
+
+    <main id="view-timeline" class="view hidden">
+      <div class="view-header">
+        <button class="back-btn" id="btn-back-from-timeline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Today
+        </button>
+        <h2>Your Wins</h2>
+      </div>
+      <div id="timeline-list" class="timeline-list"></div>
+      <div id="timeline-empty" class="timeline-empty hidden">
+        <p>No entries yet. Start by capturing today's wins.</p>
+      </div>
+    </main>
+
+    <div id="modal-export" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-box">
+        <h3>Export your wins</h3>
+        <div class="export-range">
+          <label>Date range</label>
+          <div class="date-row">
+            <input type="date" id="export-from" />
+            <span>to</span>
+            <input type="date" id="export-to" />
+          </div>
+        </div>
+        <div class="export-buttons">
+          <button class="btn-primary" id="btn-export-md">Markdown</button>
+          <button class="btn-secondary" id="btn-export-csv">CSV</button>
+        </div>
+        <button class="modal-close" id="btn-close-export">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="parser.js"></script>
+  <script src="calendar.js"></script>
+  <script src="export.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
