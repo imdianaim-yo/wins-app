@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Wins</title>
+  <title>daily wins — your work, remembered</title>
   <meta name="description" content="Capture your daily wins before the day slips away." />
   <meta name="theme-color" content="#f5f3f0" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
   <script>
@@ -23,7 +24,9 @@
   <div id="app">
     <nav class="nav">
       <a class="nav-brand" href="/" aria-label="Daily Wins — home">
-        <span class="brand-word">daily wins</span><span class="brand-bang">!</span>
+        <span class="brand-word">daily wins</span><span class="brand-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 10 19 20 6"/></svg>
+        </span>
       </a>
       <div class="nav-actions">
         <button class="nav-btn" id="btn-theme" title="Toggle dark mode">

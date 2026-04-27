@@ -83,14 +83,16 @@ body {
   line-height: 1;
 }
 
-.brand-bang {
-  font-family: var(--font);
-  font-size: 1.0625rem;
-  font-weight: 600;
-  letter-spacing: -0.045em;
-  line-height: 1;
+.brand-check {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25em;
   color: var(--ink);
-  margin-left: -0.05em;
+}
+.brand-check svg {
+  width: 0.85em;
+  height: 0.85em;
+  font-size: 1.0625rem;
 }
 
 .nav-actions { display: flex; gap: 0.25rem; }
